@@ -50,6 +50,15 @@ export async function createUser(req: Request, res: Response): Promise<void> {
   }
 }
 
+export async function deleteUser(req: Request, res: Response): Promise<void> {
+  try {
+    await authService.deleteUser(req.params.id);
+    res.status(204).send();
+  } catch {
+    res.status(500).json({ message: 'Server error' });
+  }
+}
+
 export async function toggleActive(req: Request, res: Response): Promise<void> {
   try {
     const user = await authService.toggleUserActive(req.params.id);

@@ -41,4 +41,6 @@ router.post('/users',
 
 router.patch('/users/:id/toggle', authenticate, requireRole('ADMIN'), ctrl.toggleActive);
 
+router.delete('/users/:id', authenticate, requireRole('ADMIN'), ctrl.deleteUser);
+
 export default router;

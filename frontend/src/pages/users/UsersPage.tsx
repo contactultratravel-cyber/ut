@@ -40,6 +40,11 @@ export default function UsersPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
   });
 
+  const deleteMut = useMutation({
+    mutationFn: (id: string) => authApi.deleteUser(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
+  });
+
   const { register, handleSubmit, formState: { errors } } = useForm<CreateForm>();
 
   const roleLabels: Record<string, string> = {
@@ -67,11 +72,18 @@ export default function UsersPage() {
     )},
     { key: 'actions', header: '', render: (row: AuthUser) => (
       row.id !== me?.id ? (
-        <Button size="sm" variant="outline"
-          loading={toggleMut.isPending}
-          onClick={() => toggleMut.mutate(row.id)}>
-          {(row as AuthUser & { is_active: boolean }).is_active ? 'Désactiver' : 'Activer'}
-        </Button>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline"
+            loading={toggleMut.isPending}
+            onClick={() => toggleMut.mutate(row.id)}>
+            {(row as AuthUser & { is_active: boolean }).is_active ? 'Désactiver' : 'Activer'}
+          </Button>
+          <Button size="sm" variant="danger"
+            loading={deleteMut.isPending}
+            onClick={() => { if (confirm('Supprimer ce compte ?')) deleteMut.mutate(row.id); }}>
+            Supprimer
+          </Button>
+        </div>
       ) : <span className="text-xs text-gray-400">Vous</span>
     )},
   ];

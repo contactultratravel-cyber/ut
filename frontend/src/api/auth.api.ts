@@ -18,4 +18,6 @@ export const authApi = {
   }) => api.post<AuthUser>('/auth/users', data),
 
   toggleUser: (id: string) => api.patch(`/auth/users/${id}/toggle`),
+
+  deleteUser: (id: string) => api.delete(`/auth/users/${id}`),
 };

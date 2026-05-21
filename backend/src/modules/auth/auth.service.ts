@@ -104,6 +104,10 @@ export async function createUser(data: {
   );
 }
 
+export async function deleteUser(userId: string) {
+  await run('DELETE FROM users WHERE id = ?', [userId]);
+}
+
 export async function toggleUserActive(userId: string) {
   await run('UPDATE users SET is_active = CASE WHEN is_active=1 THEN 0 ELSE 1 END WHERE id = ?', [userId]);
   return queryOne<User>(
