@@ -369,7 +369,24 @@ export default function ClientsPage() {
                     <p className="text-xs text-gray-500 font-medium">{client.phone}</p>
                   </td>
                   {/* Pays */}
-                  <td className="px-3 py-2.5 border-r border-gray-100 text-sm text-gray-700 whitespace-nowrap">{client.country}</td>
+                  <td className="px-3 py-2.5 border-r border-gray-100 whitespace-nowrap">
+                    <p className="text-sm text-gray-700">{client.country}</p>
+                    {client.route_code && (() => {
+                      const center = CAPAGO_CENTERS.find(c => c.value === client.route_code);
+                      if (!center) return null;
+                      const pill: Record<string, string> = {
+                        blue:   'bg-blue-100   text-blue-700',
+                        green:  'bg-green-100  text-green-700',
+                        amber:  'bg-amber-100  text-amber-700',
+                        purple: 'bg-purple-100 text-purple-700',
+                      };
+                      return (
+                        <span className={`inline-block mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold ${pill[center.color]}`}>
+                          {center.label}
+                        </span>
+                      );
+                    })()}
+                  </td>
                   {/* WhatsApp */}
                   <td className="px-3 py-2.5 border-r border-gray-100">
                     {client.whatsapp ? (
