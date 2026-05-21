@@ -131,6 +131,13 @@ export const VISA_TYPES: VisaType[] = [
 
 export const ROUTE_CODES: RouteCode[] = ['FRA_ORN','FRA_ALG','FRA_COS','FRA_ANBA'];
 
+export interface VisaPhoto {
+  id: string;
+  photo: string;
+  note?: string;
+  created_at: string;
+}
+
 export const CAPAGO_CENTERS = [
   { value: 'FRA_ALG',  label: 'FRA_Alger',      color: 'blue'   },
   { value: 'FRA_ORN',  label: 'FRA_Oran',        color: 'green'  },

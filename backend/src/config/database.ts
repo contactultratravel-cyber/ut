@@ -110,6 +110,12 @@ export async function initDatabase(): Promise<void> {
   try { await client.execute('ALTER TABLE clients ADD COLUMN passport_photo TEXT'); } catch (_) {}
   try { await client.execute('ALTER TABLE clients ADD COLUMN visa_photo TEXT'); } catch (_) {}
   try { await client.execute('ALTER TABLE clients ADD COLUMN visa_granted_at TEXT'); } catch (_) {}
+  await client.execute(`CREATE TABLE IF NOT EXISTS visa_photos (
+    id         TEXT PRIMARY KEY,
+    photo      TEXT NOT NULL,
+    note       TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`).catch(() => {});
 }
 
 function toObj<T>(columns: string[], row: Record<string, unknown>): T {

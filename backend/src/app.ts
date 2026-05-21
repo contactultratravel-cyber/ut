@@ -16,6 +16,7 @@ import documentRoutes    from './modules/documents/documents.routes';
 import invitationRoutes  from './modules/invitations/invitations.routes';
 import bonRoutes         from './modules/bons/bons.routes';
 import dossierRoutes     from './modules/dossiers/dossiers.routes';
+import visaPhotoRoutes   from './modules/visa-photos/visa-photos.routes';
 
 const app = express();
 
@@ -49,6 +50,7 @@ app.use('/api/documents',   documentRoutes);
 app.use('/api/invitations', invitationRoutes);
 app.use('/api/bons',        bonRoutes);
 app.use('/api/dossiers',    dossierRoutes);
+app.use('/api/visa-photos', visaPhotoRoutes);
 
 // ─── Health check ─────────────────────────────────────────────
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));

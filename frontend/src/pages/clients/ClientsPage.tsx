@@ -30,9 +30,7 @@ function ClientDetailsModal({ client, onClose }: { client: Client; onClose: () =
   const qc = useQueryClient();
   const remaining = Number(client.total_price) - Number(client.amount_paid);
   const [passportPhoto, setPassportPhoto] = useState<string | null>(client.passport_photo ?? null);
-  const [visaPhoto,     setVisaPhoto]     = useState<string | null>(client.visa_photo ?? null);
-  const fileRef    = useRef<HTMLInputElement>(null);
-  const visaFileRef = useRef<HTMLInputElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const uploadMut = useMutation({
     mutationFn: (photo: string) => clientsApi.uploadPassport(client.id, photo),
@@ -43,47 +41,6 @@ function ClientDetailsModal({ client, onClose }: { client: Client; onClose: () =
     mutationFn: () => clientsApi.deletePassport(client.id),
     onSuccess: () => { setPassportPhoto(null); qc.invalidateQueries({ queryKey: ['clients'] }); },
   });
-
-  const uploadVisaMut = useMutation({
-    mutationFn: (photo: string) => clientsApi.uploadVisaPhoto(client.id, photo),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['clients'] }),
-  });
-
-  const deleteVisaMut = useMutation({
-    mutationFn: () => clientsApi.deleteVisaPhoto(client.id),
-    onSuccess: () => { setVisaPhoto(null); qc.invalidateQueries({ queryKey: ['clients'] }); },
-  });
-
-  function handleVisaFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const img = new Image();
-      img.onload = () => {
-        const MAX = 1600;
-        const scale = Math.min(1, MAX / Math.max(img.width, img.height));
-        const canvas = document.createElement('canvas');
-        canvas.width  = Math.round(img.width  * scale);
-        canvas.height = Math.round(img.height * scale);
-        canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const base64 = canvas.toDataURL('image/jpeg', 0.9);
-        setVisaPhoto(base64);
-        uploadVisaMut.mutate(base64);
-      };
-      img.src = ev.target?.result as string;
-    };
-    reader.readAsDataURL(file);
-    e.target.value = '';
-  }
-
-  function downloadVisaJpg() {
-    if (!visaPhoto) return;
-    const a = document.createElement('a');
-    a.href = visaPhoto;
-    a.download = `visa-${client.first_name}-${client.last_name}.jpg`;
-    a.click();
-  }
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -233,42 +190,6 @@ function ClientDetailsModal({ client, onClose }: { client: Client; onClose: () =
               <Button size="sm" variant="outline" loading={uploadMut.isPending}
                 onClick={() => fileRef.current?.click()}>
                 📷 Télécharger le passeport
-              </Button>
-              <p className="text-xs text-gray-300">JPEG, PNG — compressé automatiquement</p>
-            </div>
-          )}
-        </div>
-
-        {/* Visa photo */}
-        <div>
-          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Photo du visa</h4>
-          {visaPhoto ? (
-            <div className="space-y-2">
-              <img src={visaPhoto} alt="Visa"
-                className="rounded-xl border border-emerald-200 max-h-56 w-full object-contain bg-emerald-50 cursor-pointer"
-                onClick={() => window.open(visaPhoto, '_blank')} />
-              <div className="flex gap-2">
-                <button onClick={downloadVisaJpg}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition-colors">
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                  Télécharger JPG
-                </button>
-                <Button size="sm" variant="danger" loading={deleteVisaMut.isPending}
-                  onClick={() => { if (confirm('Supprimer la photo du visa ?')) deleteVisaMut.mutate(); }}>
-                  Supprimer
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="border-2 border-dashed border-emerald-200 rounded-xl p-5 text-center space-y-2">
-              <input ref={visaFileRef} type="file" accept="image/*" onChange={handleVisaFile} className="hidden" />
-              <p className="text-sm text-gray-400">Aucune photo du visa</p>
-              <Button size="sm" variant="outline" loading={uploadVisaMut.isPending}
-                onClick={() => visaFileRef.current?.click()}
-                className="border-emerald-300 text-emerald-700 hover:bg-emerald-50">
-                🛂 Télécharger le visa
               </Button>
               <p className="text-xs text-gray-300">JPEG, PNG — compressé automatiquement</p>
             </div>

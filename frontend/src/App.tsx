@@ -14,6 +14,7 @@ import InvitationsPage from './pages/invitations/InvitationsPage';
 import BonPage from './pages/bon/BonPage';
 import BonArchivePage from './pages/bon/BonArchivePage';
 import DossiersPage from './pages/dossiers/DossiersPage';
+import VisaAccordePage from './pages/visa/VisaAccordePage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -45,6 +46,7 @@ export default function App() {
         <Route path="bon"         element={<BonPage />} />
         <Route path="bon-archive" element={<BonArchivePage />} />
         <Route path="dossiers"    element={<DossiersPage />} />
+        <Route path="visa-accorde" element={<VisaAccordePage />} />
         <Route path="users"       element={<UsersPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
