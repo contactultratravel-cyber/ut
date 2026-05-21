@@ -71,3 +71,19 @@ export async function remove(req: AuthRequest, res: Response): Promise<void> {
     res.status(204).send();
   } catch { res.status(500).json({ message: 'Server error' }); }
 }
+
+export async function uploadPassport(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    const { photo } = req.body as { photo: string };
+    if (!photo) { res.status(400).json({ message: 'Photo required' }); return; }
+    await svc.setPassportPhoto(req.params.id, photo);
+    res.json({ ok: true });
+  } catch { res.status(500).json({ message: 'Server error' }); }
+}
+
+export async function deletePassport(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    await svc.clearPassportPhoto(req.params.id);
+    res.json({ ok: true });
+  } catch { res.status(500).json({ message: 'Server error' }); }
+}

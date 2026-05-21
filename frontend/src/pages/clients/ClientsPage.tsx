@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { clientsApi } from '../../api/clients.api';
 import { Client, ClientStatus } from '../../types';
@@ -8,19 +8,17 @@ import { StatusBadge } from '../../components/ui/Badge';
 import ClientForm from './ClientForm';
 import api from '../../api/axios';
 
-const TABS: { label: string; value: string; color: string; badge: string }[] = [
-  { label: 'Tous',     value: '',          color: 'text-gray-700  bg-white',           badge: 'bg-gray-100  text-gray-600'  },
-  { label: 'Nouveaux', value: 'NEW',       color: 'text-blue-700  bg-blue-50',         badge: 'bg-blue-100  text-blue-700'  },
-  { label: 'En cours', value: 'PROCESSING',color: 'text-amber-700 bg-amber-50',        badge: 'bg-amber-100 text-amber-700' },
-  { label: 'Terminés', value: 'COMPLETED', color: 'text-green-700 bg-green-50',        badge: 'bg-green-100 text-green-700' },
-  { label: 'Livrés',   value: 'DELIVERED', color: 'text-purple-700 bg-purple-50',      badge: 'bg-purple-100 text-purple-700'},
+const TABS = [
+  { label: 'Tous',     value: '',           on: 'bg-white text-gray-800 shadow',             off: 'bg-gray-50 text-gray-500 hover:bg-gray-100',       badge: 'bg-gray-200 text-gray-600'    },
+  { label: 'Nouveaux', value: 'NEW',        on: 'bg-blue-100 text-blue-800 shadow',           off: 'bg-blue-50 text-blue-600 hover:bg-blue-100',        badge: 'bg-blue-200 text-blue-700'    },
+  { label: 'En cours', value: 'PROCESSING', on: 'bg-amber-100 text-amber-800 shadow',         off: 'bg-amber-50 text-amber-600 hover:bg-amber-100',     badge: 'bg-amber-200 text-amber-700'  },
+  { label: 'Terminés', value: 'COMPLETED',  on: 'bg-green-100 text-green-800 shadow',         off: 'bg-green-50 text-green-600 hover:bg-green-100',     badge: 'bg-green-200 text-green-700'  },
+  { label: 'Livrés',   value: 'DELIVERED',  on: 'bg-purple-100 text-purple-800 shadow',       off: 'bg-purple-50 text-purple-600 hover:bg-purple-100',  badge: 'bg-purple-200 text-purple-700'},
 ];
 
 function fmt(n: number) { return Number(n).toLocaleString('fr-DZ'); }
 function fmtDate(d?: string) {
   if (!d) return '—';
-  // "YYYY-MM-DD" → add T12:00:00 to avoid UTC day-shift
-  // "YYYY-MM-DD HH:MM:SS" (SQLite) → replace space with T
   const normalized = d.length === 10 ? d + 'T12:00:00' : d.replace(' ', 'T');
   const date = new Date(normalized);
   if (isNaN(date.getTime())) return '—';
@@ -28,7 +26,43 @@ function fmtDate(d?: string) {
 }
 
 function ClientDetailsModal({ client, onClose }: { client: Client; onClose: () => void }) {
+  const qc = useQueryClient();
   const remaining = Number(client.total_price) - Number(client.amount_paid);
+  const [passportPhoto, setPassportPhoto] = useState<string | null>(client.passport_photo ?? null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const uploadMut = useMutation({
+    mutationFn: (photo: string) => clientsApi.uploadPassport(client.id, photo),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['clients'] }),
+  });
+
+  const deletePpMut = useMutation({
+    mutationFn: () => clientsApi.deletePassport(client.id),
+    onSuccess: () => { setPassportPhoto(null); qc.invalidateQueries({ queryKey: ['clients'] }); },
+  });
+
+  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 1400;
+        const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+        const canvas = document.createElement('canvas');
+        canvas.width  = Math.round(img.width  * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const base64 = canvas.toDataURL('image/jpeg', 0.82);
+        setPassportPhoto(base64);
+        uploadMut.mutate(base64);
+      };
+      img.src = ev.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  }
 
   function downloadDoc(type: 'invoice' | 'contract' | 'voucher') {
     api.get(`/documents/clients/${client.id}/${type}`, { responseType: 'blob' })
@@ -82,7 +116,7 @@ function ClientDetailsModal({ client, onClose }: { client: Client; onClose: () =
           </div>
         </div>
 
-        {/* Appointment — always shown when status is set */}
+        {/* Appointment */}
         {(client.appointment_date || client.appointment_status) && (
           <div>
             <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Rendez-vous</h4>
@@ -115,6 +149,32 @@ function ClientDetailsModal({ client, onClose }: { client: Client; onClose: () =
               </p>
             </div>
           </div>
+        </div>
+
+        {/* Passport photo */}
+        <div>
+          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Photo du passeport</h4>
+          {passportPhoto ? (
+            <div className="space-y-2">
+              <img src={passportPhoto} alt="Passeport"
+                className="rounded-xl border border-gray-200 max-h-56 w-full object-contain bg-gray-50 cursor-pointer"
+                onClick={() => window.open(passportPhoto, '_blank')} />
+              <Button size="sm" variant="danger" loading={deletePpMut.isPending}
+                onClick={() => { if (confirm('Supprimer la photo du passeport ?')) deletePpMut.mutate(); }}>
+                Supprimer la photo
+              </Button>
+            </div>
+          ) : (
+            <div className="border-2 border-dashed border-gray-200 rounded-xl p-5 text-center space-y-2">
+              <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
+              <p className="text-sm text-gray-400">Aucune photo du passeport</p>
+              <Button size="sm" variant="outline" loading={uploadMut.isPending}
+                onClick={() => fileRef.current?.click()}>
+                📷 Télécharger le passeport
+              </Button>
+              <p className="text-xs text-gray-300">JPEG, PNG — compressé automatiquement</p>
+            </div>
+          )}
         </div>
 
         {/* Dates */}
@@ -242,13 +302,13 @@ export default function ClientsPage() {
 
       {/* Tabs + Search */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <div className="flex gap-1 bg-gray-100 p-1 rounded-xl">
+        <div className="flex gap-1 bg-gray-200 p-1 rounded-xl">
           {TABS.map(t => (
             <button key={t.value}
               onClick={() => setTab(t.value)}
-              className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all shadow-sm ${tab === t.value ? `${t.color} shadow` : 'text-gray-500 hover:text-gray-800 bg-transparent'}`}>
+              className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${tab === t.value ? t.on : t.off}`}>
               {t.label}
-              <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${tab === t.value ? t.badge : 'bg-gray-200 text-gray-500'}`}>
+              <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${t.badge}`}>
                 {counts[t.value as keyof typeof counts]}
               </span>
             </button>
@@ -276,7 +336,7 @@ export default function ClientsPage() {
           <table className="min-w-full border-collapse">
             <thead className="bg-gray-50">
               <tr className="border-b-2 border-gray-200">
-                {['Client', 'Téléphone', 'WhatsApp', 'Statut', 'Date RDV', 'Actions'].map(h => (
+                {['Client', 'Pays', 'WhatsApp', 'Statut', 'Date RDV', 'Actions'].map(h => (
                   <th key={h} className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider border-r border-gray-200 last:border-r-0 whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -288,9 +348,10 @@ export default function ClientsPage() {
                   <td className="px-3 py-2.5 border-r border-gray-100">
                     <p className="font-semibold text-gray-900 text-sm">{client.first_name} {client.last_name}</p>
                     {client.email && <p className="text-xs text-gray-400">{client.email}</p>}
+                    <p className="text-xs text-gray-500 font-medium">{client.phone}</p>
                   </td>
-                  {/* Tel */}
-                  <td className="px-3 py-2.5 border-r border-gray-100 text-sm text-gray-700 whitespace-nowrap">{client.phone}</td>
+                  {/* Pays */}
+                  <td className="px-3 py-2.5 border-r border-gray-100 text-sm text-gray-700 whitespace-nowrap">{client.country}</td>
                   {/* WhatsApp */}
                   <td className="px-3 py-2.5 border-r border-gray-100">
                     {client.whatsapp ? (
@@ -370,7 +431,7 @@ export default function ClientsPage() {
         )}
       </Modal>
 
-      {/* Appointment update modal (PROCESSING clients) */}
+      {/* Appointment update modal */}
       <Modal open={!!apptClient} onClose={() => setApptClient(null)} title="Mettre à jour le rendez-vous">
         <div className="space-y-4">
           <div>
@@ -393,7 +454,7 @@ export default function ClientsPage() {
         </div>
       </Modal>
 
-      {/* Step1 modal — NEW → PROCESSING with appointment */}
+      {/* Step1 modal — NEW → PROCESSING */}
       <Modal open={!!step1Client} onClose={() => setStep1Client(null)}
         title={`Passer "${step1Client?.first_name} ${step1Client?.last_name}" en cours`}>
         <div className="space-y-4">

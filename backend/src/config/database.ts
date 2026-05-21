@@ -107,6 +107,7 @@ export async function initDatabase(): Promise<void> {
   // Migrations — safe to run each time
   try { await client.execute('ALTER TABLE clients ADD COLUMN whatsapp TEXT'); } catch (_) {}
   try { await client.execute('ALTER TABLE users ADD COLUMN verification_code TEXT'); } catch (_) {}
+  try { await client.execute('ALTER TABLE clients ADD COLUMN passport_photo TEXT'); } catch (_) {}
 }
 
 function toObj<T>(columns: string[], row: Record<string, unknown>): T {

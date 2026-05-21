@@ -30,6 +30,7 @@ export interface Client {
   appointment_date?: string;
   appointment_status?: AppointmentStatus;
   whatsapp?: string;
+  passport_photo?: string;
   created_by?: string;
   created_at: string;
   updated_at: string;

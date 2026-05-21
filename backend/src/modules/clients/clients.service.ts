@@ -118,3 +118,11 @@ export async function deliverClient(id: string): Promise<Client> {
 export async function deleteClient(id: string): Promise<void> {
   await run('DELETE FROM clients WHERE id = ?', [id]);
 }
+
+export async function setPassportPhoto(id: string, photo: string): Promise<void> {
+  await run("UPDATE clients SET passport_photo = ?, updated_at = datetime('now') WHERE id = ?", [photo, id]);
+}
+
+export async function clearPassportPhoto(id: string): Promise<void> {
+  await run("UPDATE clients SET passport_photo = NULL, updated_at = datetime('now') WHERE id = ?", [id]);
+}
