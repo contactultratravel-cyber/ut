@@ -8,12 +8,12 @@ import { StatusBadge } from '../../components/ui/Badge';
 import ClientForm from './ClientForm';
 import api from '../../api/axios';
 
-const TABS: { label: string; value: string }[] = [
-  { label: 'Tous',        value: '' },
-  { label: 'Nouveaux',    value: 'NEW' },
-  { label: 'En cours',    value: 'PROCESSING' },
-  { label: 'Terminés',    value: 'COMPLETED' },
-  { label: 'Livrés',      value: 'DELIVERED' },
+const TABS: { label: string; value: string; color: string; badge: string }[] = [
+  { label: 'Tous',     value: '',          color: 'text-gray-700  bg-white',           badge: 'bg-gray-100  text-gray-600'  },
+  { label: 'Nouveaux', value: 'NEW',       color: 'text-blue-700  bg-blue-50',         badge: 'bg-blue-100  text-blue-700'  },
+  { label: 'En cours', value: 'PROCESSING',color: 'text-amber-700 bg-amber-50',        badge: 'bg-amber-100 text-amber-700' },
+  { label: 'Terminés', value: 'COMPLETED', color: 'text-green-700 bg-green-50',        badge: 'bg-green-100 text-green-700' },
+  { label: 'Livrés',   value: 'DELIVERED', color: 'text-purple-700 bg-purple-50',      badge: 'bg-purple-100 text-purple-700'},
 ];
 
 function fmt(n: number) { return Number(n).toLocaleString('fr-DZ'); }
@@ -246,9 +246,9 @@ export default function ClientsPage() {
           {TABS.map(t => (
             <button key={t.value}
               onClick={() => setTab(t.value)}
-              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${tab === t.value ? 'bg-white shadow text-blue-700' : 'text-gray-600 hover:text-gray-900'}`}>
+              className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all shadow-sm ${tab === t.value ? `${t.color} shadow` : 'text-gray-500 hover:text-gray-800 bg-transparent'}`}>
               {t.label}
-              <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${tab === t.value ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-600'}`}>
+              <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${tab === t.value ? t.badge : 'bg-gray-200 text-gray-500'}`}>
                 {counts[t.value as keyof typeof counts]}
               </span>
             </button>
