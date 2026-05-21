@@ -1,19 +1,13 @@
-import initSqlJs, { Database } from 'sql.js';
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
-import path from 'path';
+import { createClient } from '@libsql/client';
 import { randomUUID } from 'crypto';
 
-const DB_PATH = process.env.DB_PATH
-  ?? path.join(process.cwd(), '..', 'data', 'ultratravel.db');
+const client = createClient({
+  url:       process.env.TURSO_DATABASE_URL ?? 'file:local.db',
+  authToken: process.env.TURSO_AUTH_TOKEN,
+});
 
-let db: Database;
-
-function save() {
-  writeFileSync(DB_PATH, Buffer.from(db.export()));
-}
-
-const SCHEMA = `
-  CREATE TABLE IF NOT EXISTS users (
+const SCHEMA: string[] = [
+  `CREATE TABLE IF NOT EXISTS users (
     id            TEXT PRIMARY KEY,
     email         TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
@@ -23,8 +17,8 @@ const SCHEMA = `
     is_active     INTEGER NOT NULL DEFAULT 1,
     created_at    TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
-  );
-  CREATE TABLE IF NOT EXISTS clients (
+  )`,
+  `CREATE TABLE IF NOT EXISTS clients (
     id                 TEXT PRIMARY KEY,
     first_name         TEXT NOT NULL,
     last_name          TEXT NOT NULL,
@@ -40,11 +34,12 @@ const SCHEMA = `
     status             TEXT NOT NULL DEFAULT 'NEW',
     appointment_date   TEXT,
     appointment_status TEXT,
+    whatsapp           TEXT,
     created_by         TEXT,
     created_at         TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at         TEXT NOT NULL DEFAULT (datetime('now'))
-  );
-  CREATE TABLE IF NOT EXISTS tickets (
+  )`,
+  `CREATE TABLE IF NOT EXISTS tickets (
     id          TEXT PRIMARY KEY,
     client_name TEXT NOT NULL,
     phone       TEXT NOT NULL,
@@ -52,8 +47,8 @@ const SCHEMA = `
     price       REAL NOT NULL,
     created_by  TEXT,
     created_at  TEXT NOT NULL DEFAULT (datetime('now'))
-  );
-  CREATE TABLE IF NOT EXISTS hotels (
+  )`,
+  `CREATE TABLE IF NOT EXISTS hotels (
     id          TEXT PRIMARY KEY,
     client_name TEXT NOT NULL,
     phone       TEXT NOT NULL,
@@ -61,8 +56,8 @@ const SCHEMA = `
     price       REAL NOT NULL,
     created_by  TEXT,
     created_at  TEXT NOT NULL DEFAULT (datetime('now'))
-  );
-  CREATE TABLE IF NOT EXISTS invitations (
+  )`,
+  `CREATE TABLE IF NOT EXISTS invitations (
     id              TEXT PRIMARY KEY,
     nom_invitation  TEXT NOT NULL,
     pays            TEXT NOT NULL,
@@ -73,8 +68,8 @@ const SCHEMA = `
     note            TEXT,
     created_by      TEXT,
     created_at      TEXT NOT NULL DEFAULT (datetime('now'))
-  );
-  CREATE TABLE IF NOT EXISTS bons (
+  )`,
+  `CREATE TABLE IF NOT EXISTS bons (
     id         TEXT PRIMARY KEY,
     date       TEXT NOT NULL,
     first_name TEXT NOT NULL,
@@ -87,8 +82,8 @@ const SCHEMA = `
     created_by TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-  );
-  CREATE TABLE IF NOT EXISTS dossiers (
+  )`,
+  `CREATE TABLE IF NOT EXISTS dossiers (
     id          TEXT PRIMARY KEY,
     first_name  TEXT NOT NULL,
     last_name   TEXT NOT NULL,
@@ -99,56 +94,42 @@ const SCHEMA = `
     created_by  TEXT,
     created_at  TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
-  );
-  CREATE INDEX IF NOT EXISTS idx_clients_status ON clients(status);
-  CREATE INDEX IF NOT EXISTS idx_clients_created_at ON clients(created_at);
-  CREATE INDEX IF NOT EXISTS idx_invitations_created_at ON invitations(created_at);
-`;
+  )`,
+  `CREATE INDEX IF NOT EXISTS idx_clients_status      ON clients(status)`,
+  `CREATE INDEX IF NOT EXISTS idx_clients_created_at  ON clients(created_at)`,
+  `CREATE INDEX IF NOT EXISTS idx_invitations_created ON invitations(created_at)`,
+];
 
 export async function initDatabase(): Promise<void> {
-  const dir = path.dirname(DB_PATH);
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-
-  const SQL = await initSqlJs({
-    locateFile: (file: string) =>
-      path.join(process.cwd(), 'node_modules', 'sql.js', 'dist', file),
-  });
-
-  if (existsSync(DB_PATH)) {
-    db = new SQL.Database(readFileSync(DB_PATH));
-  } else {
-    db = new SQL.Database();
+  for (const stmt of SCHEMA) {
+    await client.execute(stmt);
   }
-
-  db.run(SCHEMA);
-  // Migrations — add columns if they don't exist yet
-  try { db.run('ALTER TABLE clients ADD COLUMN whatsapp TEXT'); } catch (_) {}
-  try { db.run('ALTER TABLE users ADD COLUMN verification_code TEXT'); } catch (_) {}
-  save();
+  // Migrations — safe to run each time
+  try { await client.execute('ALTER TABLE clients ADD COLUMN whatsapp TEXT'); } catch (_) {}
+  try { await client.execute('ALTER TABLE users ADD COLUMN verification_code TEXT'); } catch (_) {}
 }
 
-export function query<T = Record<string, unknown>>(sql: string, params: unknown[] = []): T[] {
-  const stmt = db.prepare(sql);
-  stmt.bind(params as Parameters<typeof stmt.bind>[0]);
-  const rows: T[] = [];
-  while (stmt.step()) {
-    rows.push(stmt.getAsObject() as T);
+function toObj<T>(columns: string[], row: Record<string, unknown>): T {
+  const obj: Record<string, unknown> = {};
+  for (const col of columns) {
+    const v = row[col];
+    obj[col] = typeof v === 'bigint' ? Number(v) : v;
   }
-  stmt.free();
-  return rows;
+  return obj as T;
 }
 
-export function queryOne<T = Record<string, unknown>>(sql: string, params: unknown[] = []): T | null {
-  const rows = query<T>(sql, params);
+export async function query<T = Record<string, unknown>>(sql: string, params: unknown[] = []): Promise<T[]> {
+  const result = await client.execute({ sql, args: params as never[] });
+  return result.rows.map(row => toObj<T>(result.columns, row as unknown as Record<string, unknown>));
+}
+
+export async function queryOne<T = Record<string, unknown>>(sql: string, params: unknown[] = []): Promise<T | null> {
+  const rows = await query<T>(sql, params);
   return rows[0] ?? null;
 }
 
-export function run(sql: string, params: unknown[] = []): void {
-  const stmt = db.prepare(sql);
-  stmt.bind(params as Parameters<typeof stmt.bind>[0]);
-  stmt.step();
-  stmt.free();
-  save();
+export async function run(sql: string, params: unknown[] = []): Promise<void> {
+  await client.execute({ sql, args: params as never[] });
 }
 
 export function uuid(): string {

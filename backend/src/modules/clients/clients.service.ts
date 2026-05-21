@@ -9,29 +9,29 @@ export interface CreateClientInput {
 }
 
 function toClient(row: Record<string, unknown>): Client {
-  if (!row) return row as Client;
+  if (!row) return row as unknown as Client;
   return {
-    ...(row as Client),
+    ...(row as unknown as Client),
     remaining_amount: Number(row.total_price) - Number(row.amount_paid),
     is_active: row.is_active === 1 || row.is_active === true,
-  };
+  } as Client;
 }
 
-export function listClients(status?: string): Client[] {
+export async function listClients(status?: string): Promise<Client[]> {
   const rows = status
-    ? query<Record<string,unknown>>('SELECT * FROM clients WHERE status = ? ORDER BY created_at DESC', [status])
-    : query<Record<string,unknown>>('SELECT * FROM clients ORDER BY created_at DESC');
+    ? await query<Record<string,unknown>>('SELECT * FROM clients WHERE status = ? ORDER BY created_at DESC', [status])
+    : await query<Record<string,unknown>>('SELECT * FROM clients ORDER BY created_at DESC');
   return rows.map(toClient);
 }
 
-export function getClient(id: string): Client | null {
-  const row = queryOne<Record<string,unknown>>('SELECT * FROM clients WHERE id = ?', [id]);
+export async function getClient(id: string): Promise<Client | null> {
+  const row = await queryOne<Record<string,unknown>>('SELECT * FROM clients WHERE id = ?', [id]);
   return row ? toClient(row) : null;
 }
 
-export function createClient(data: CreateClientInput): Client | null {
+export async function createClient(data: CreateClientInput): Promise<Client | null> {
   const id = uuid();
-  run(
+  await run(
     `INSERT INTO clients
        (id, first_name, last_name, phone, email, job, invitation_name,
         country, visa_type, route_code, total_price, amount_paid, created_by, whatsapp)
@@ -46,11 +46,11 @@ export function createClient(data: CreateClientInput): Client | null {
   return getClient(id);
 }
 
-export function updateClient(id: string, data: Partial<{
+export async function updateClient(id: string, data: Partial<{
   firstName: string; lastName: string; phone: string; email: string;
   job: string; invitationName: string; country: string; visaType: string;
   routeCode: string; totalPrice: number; amountPaid: number; whatsapp: string;
-}>): Client | null {
+}>): Promise<Client | null> {
   const map: Record<string, unknown> = {
     first_name: data.firstName, last_name: data.lastName, phone: data.phone,
     email: data.email, job: data.job, invitation_name: data.invitationName,
@@ -65,24 +65,24 @@ export function updateClient(id: string, data: Partial<{
   if (fields.length === 0) return getClient(id);
   fields.push(`updated_at = datetime('now')`);
   values.push(id);
-  run(`UPDATE clients SET ${fields.join(', ')} WHERE id = ?`, values);
+  await run(`UPDATE clients SET ${fields.join(', ')} WHERE id = ?`, values);
   return getClient(id);
 }
 
-export function validateStep1(id: string, appointmentDate?: string, appointmentStatus?: string): Client {
-  const client = getClient(id);
+export async function validateStep1(id: string, appointmentDate?: string, appointmentStatus?: string): Promise<Client> {
+  const client = await getClient(id);
   if (!client) throw new Error('Client not found');
   if (client.status !== 'NEW') throw new Error('Client must be in NEW status');
-  run(
+  await run(
     `UPDATE clients SET status='PROCESSING', appointment_date=?, appointment_status=?,
      updated_at=datetime('now') WHERE id=?`,
     [appointmentDate ?? null, appointmentStatus ?? 'PENDING', id]
   );
-  return getClient(id)!;
+  return (await getClient(id))!;
 }
 
-export function updateAppointment(id: string, data: { appointmentDate?: string; appointmentStatus?: string }): Client {
-  const client = getClient(id);
+export async function updateAppointment(id: string, data: { appointmentDate?: string; appointmentStatus?: string }): Promise<Client> {
+  const client = await getClient(id);
   if (!client) throw new Error('Client not found');
   const sets: string[] = [];
   const vals: unknown[] = [];
@@ -91,31 +91,30 @@ export function updateAppointment(id: string, data: { appointmentDate?: string; 
   if (sets.length > 0) {
     sets.push("updated_at=datetime('now')");
     vals.push(id);
-    run(`UPDATE clients SET ${sets.join(', ')} WHERE id=?`, vals);
+    await run(`UPDATE clients SET ${sets.join(', ')} WHERE id=?`, vals);
   }
-  return getClient(id)!;
+  return (await getClient(id))!;
 }
 
-export function finalValidation(id: string): Client {
-  const client = getClient(id);
+export async function finalValidation(id: string): Promise<Client> {
+  const client = await getClient(id);
   if (!client) throw new Error('Client not found');
   if (client.status !== 'PROCESSING') throw new Error('Client must be in PROCESSING status');
-  run(`UPDATE clients SET status='COMPLETED', appointment_status='CONFIRMED', updated_at=datetime('now') WHERE id=?`, [id]);
-  return getClient(id)!;
+  await run(`UPDATE clients SET status='COMPLETED', appointment_status='CONFIRMED', updated_at=datetime('now') WHERE id=?`, [id]);
+  return (await getClient(id))!;
 }
 
-export function deliverClient(id: string): Client {
-  const client = getClient(id);
+export async function deliverClient(id: string): Promise<Client> {
+  const client = await getClient(id);
   if (!client) throw new Error('Client not found');
   if (client.status !== 'COMPLETED') throw new Error('Client must be in COMPLETED status');
-  // Mark as delivered and set amount_paid = total_price (payment confirmed received)
-  run(
+  await run(
     `UPDATE clients SET status='DELIVERED', amount_paid=total_price, updated_at=datetime('now') WHERE id=?`,
     [id]
   );
-  return getClient(id)!;
+  return (await getClient(id))!;
 }
 
-export function deleteClient(id: string) {
-  run('DELETE FROM clients WHERE id = ?', [id]);
+export async function deleteClient(id: string): Promise<void> {
+  await run('DELETE FROM clients WHERE id = ?', [id]);
 }

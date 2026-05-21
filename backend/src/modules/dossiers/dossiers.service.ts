@@ -6,20 +6,20 @@ export interface Dossier {
   created_by?: string; created_at: string; updated_at: string;
 }
 
-export function listDossiers(): Dossier[] {
+export async function listDossiers(): Promise<Dossier[]> {
   return query<Dossier>('SELECT * FROM dossiers ORDER BY created_at DESC');
 }
 
-export function createDossier(data: Omit<Dossier,'id'|'created_at'|'updated_at'>, createdBy: string): Dossier {
+export async function createDossier(data: Omit<Dossier,'id'|'created_at'|'updated_at'>, createdBy: string): Promise<Dossier> {
   const id = uuid();
-  run(`INSERT INTO dossiers (id,first_name,last_name,phone,country,total_price,note,created_by)
+  await run(`INSERT INTO dossiers (id,first_name,last_name,phone,country,total_price,note,created_by)
        VALUES (?,?,?,?,?,?,?,?)`,
     [id, data.first_name, data.last_name, data.phone, data.country,
      data.total_price, data.note??null, createdBy]);
-  return queryOne<Dossier>('SELECT * FROM dossiers WHERE id=?', [id])!;
+  return (await queryOne<Dossier>('SELECT * FROM dossiers WHERE id=?', [id]))!;
 }
 
-export function updateDossier(id: string, data: Partial<Dossier>): Dossier | null {
+export async function updateDossier(id: string, data: Partial<Dossier>): Promise<Dossier | null> {
   const fields: string[] = [];
   const vals: unknown[] = [];
   const map: Record<string, unknown> = {
@@ -32,10 +32,10 @@ export function updateDossier(id: string, data: Partial<Dossier>): Dossier | nul
   if (!fields.length) return queryOne<Dossier>('SELECT * FROM dossiers WHERE id=?', [id]);
   fields.push("updated_at=datetime('now')");
   vals.push(id);
-  run(`UPDATE dossiers SET ${fields.join(',')} WHERE id=?`, vals);
+  await run(`UPDATE dossiers SET ${fields.join(',')} WHERE id=?`, vals);
   return queryOne<Dossier>('SELECT * FROM dossiers WHERE id=?', [id]);
 }
 
-export function deleteDossier(id: string): void {
-  run('DELETE FROM dossiers WHERE id=?', [id]);
+export async function deleteDossier(id: string): Promise<void> {
+  await run('DELETE FROM dossiers WHERE id=?', [id]);
 }

@@ -13,17 +13,17 @@ export interface Invitation {
   created_at: string;
 }
 
-export function listInvitations(): Invitation[] {
+export async function listInvitations(): Promise<Invitation[]> {
   return query<Invitation>('SELECT * FROM invitations ORDER BY created_at DESC');
 }
 
-export function getInvitation(id: string): Invitation | null {
+export async function getInvitation(id: string): Promise<Invitation | null> {
   return queryOne<Invitation>('SELECT * FROM invitations WHERE id = ?', [id]);
 }
 
-export function createInvitation(data: Omit<Invitation, 'id' | 'created_at'>): Invitation | null {
+export async function createInvitation(data: Omit<Invitation, 'id' | 'created_at'>): Promise<Invitation | null> {
   const id = uuid();
-  run(
+  await run(
     `INSERT INTO invitations (id, nom_invitation, pays, date_invitation, link, prix_invitation, prix_b2c, note, created_by)
      VALUES (?,?,?,?,?,?,?,?,?)`,
     [id, data.nom_invitation, data.pays, data.date_invitation ?? null, data.link ?? null,
@@ -32,7 +32,7 @@ export function createInvitation(data: Omit<Invitation, 'id' | 'created_at'>): I
   return getInvitation(id);
 }
 
-export function updateInvitation(id: string, data: Partial<Invitation>): Invitation | null {
+export async function updateInvitation(id: string, data: Partial<Invitation>): Promise<Invitation | null> {
   const map: Record<string, unknown> = {
     nom_invitation:  data.nom_invitation,
     pays:            data.pays,
@@ -49,10 +49,10 @@ export function updateInvitation(id: string, data: Partial<Invitation>): Invitat
   }
   if (fields.length === 0) return getInvitation(id);
   values.push(id);
-  run(`UPDATE invitations SET ${fields.join(', ')} WHERE id = ?`, values);
+  await run(`UPDATE invitations SET ${fields.join(', ')} WHERE id = ?`, values);
   return getInvitation(id);
 }
 
-export function deleteInvitation(id: string) {
-  run('DELETE FROM invitations WHERE id = ?', [id]);
+export async function deleteInvitation(id: string): Promise<void> {
+  await run('DELETE FROM invitations WHERE id = ?', [id]);
 }

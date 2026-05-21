@@ -6,20 +6,20 @@ export interface Bon {
   agent?: string; created_by?: string; created_at: string; updated_at: string;
 }
 
-export function listBons(): Bon[] {
+export async function listBons(): Promise<Bon[]> {
   return query<Bon>('SELECT * FROM bons ORDER BY created_at DESC');
 }
 
-export function createBon(data: Omit<Bon,'id'|'created_at'|'updated_at'>, createdBy: string): Bon {
+export async function createBon(data: Omit<Bon,'id'|'created_at'|'updated_at'>, createdBy: string): Promise<Bon> {
   const id = uuid();
-  run(`INSERT INTO bons (id,date,first_name,last_name,phone,motif,total,paid,agent,created_by)
+  await run(`INSERT INTO bons (id,date,first_name,last_name,phone,motif,total,paid,agent,created_by)
        VALUES (?,?,?,?,?,?,?,?,?,?)`,
     [id, data.date, data.first_name, data.last_name, data.phone??null,
      data.motif??null, data.total, data.paid, data.agent??null, createdBy]);
-  return queryOne<Bon>('SELECT * FROM bons WHERE id=?', [id])!;
+  return (await queryOne<Bon>('SELECT * FROM bons WHERE id=?', [id]))!;
 }
 
-export function updateBon(id: string, data: Partial<Bon>): Bon | null {
+export async function updateBon(id: string, data: Partial<Bon>): Promise<Bon | null> {
   const fields: string[] = [];
   const vals: unknown[] = [];
   const map: Record<string, unknown> = {
@@ -33,10 +33,10 @@ export function updateBon(id: string, data: Partial<Bon>): Bon | null {
   if (!fields.length) return queryOne<Bon>('SELECT * FROM bons WHERE id=?', [id]);
   fields.push("updated_at=datetime('now')");
   vals.push(id);
-  run(`UPDATE bons SET ${fields.join(',')} WHERE id=?`, vals);
+  await run(`UPDATE bons SET ${fields.join(',')} WHERE id=?`, vals);
   return queryOne<Bon>('SELECT * FROM bons WHERE id=?', [id]);
 }
 
-export function deleteBon(id: string): void {
-  run('DELETE FROM bons WHERE id=?', [id]);
+export async function deleteBon(id: string): Promise<void> {
+  await run('DELETE FROM bons WHERE id=?', [id]);
 }

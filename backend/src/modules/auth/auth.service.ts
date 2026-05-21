@@ -5,7 +5,7 @@ import { User, JwtPayload } from '../../types/index';
 import { sendRegistrationCode } from '../../services/email.service';
 
 export async function loginUser(email: string, password: string) {
-  const user = queryOne<User>(
+  const user = await queryOne<User>(
     'SELECT * FROM users WHERE email = ? AND is_active = 1',
     [email.toLowerCase().trim()]
   );
@@ -32,14 +32,14 @@ export async function loginUser(email: string, password: string) {
   };
 }
 
-export function getProfile(userId: string) {
+export async function getProfile(userId: string) {
   return queryOne<Omit<User, 'password_hash'>>(
     'SELECT id, email, first_name, last_name, role, is_active, created_at FROM users WHERE id = ?',
     [userId]
   );
 }
 
-export function listUsers() {
+export async function listUsers() {
   return query<Omit<User, 'password_hash'>>(
     'SELECT id, email, first_name, last_name, role, is_active, verification_code, created_at FROM users ORDER BY created_at DESC'
   );
@@ -49,14 +49,14 @@ export async function registerUser(data: {
   email: string; password: string;
   firstName: string; lastName: string; role: string;
 }) {
-  const existing = queryOne('SELECT id FROM users WHERE email = ?', [data.email.toLowerCase().trim()]);
+  const existing = await queryOne('SELECT id FROM users WHERE email = ?', [data.email.toLowerCase().trim()]);
   if (existing) throw new Error('EMAIL_TAKEN');
 
   const hash = await bcrypt.hash(data.password, 12);
   const id   = uuid();
   const code = String(Math.floor(100000 + Math.random() * 900000));
 
-  run(
+  await run(
     `INSERT INTO users (id, email, password_hash, first_name, last_name, role, is_active, verification_code)
      VALUES (?, ?, ?, ?, ?, ?, 0, ?)`,
     [id, data.email.toLowerCase().trim(), hash, data.firstName, data.lastName, data.role, code]
@@ -74,13 +74,13 @@ export async function registerUser(data: {
   return { email: data.email, firstName: data.firstName, code };
 }
 
-export function verifyCode(email: string, code: string) {
-  const user = queryOne<User>(
+export async function verifyCode(email: string, code: string) {
+  const user = await queryOne<User>(
     'SELECT * FROM users WHERE email = ? AND verification_code = ? AND is_active = 0',
     [email.toLowerCase().trim(), code]
   );
   if (!user) throw new Error('INVALID_CODE');
-  run(
+  await run(
     `UPDATE users SET is_active = 1, verification_code = NULL, updated_at = datetime('now') WHERE id = ?`,
     [user.id]
   );
@@ -88,15 +88,12 @@ export function verifyCode(email: string, code: string) {
 }
 
 export async function createUser(data: {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  role: string;
+  email: string; password: string;
+  firstName: string; lastName: string; role: string;
 }) {
   const hash = await bcrypt.hash(data.password, 12);
   const id   = uuid();
-  run(
+  await run(
     `INSERT INTO users (id, email, password_hash, first_name, last_name, role)
      VALUES (?, ?, ?, ?, ?, ?)`,
     [id, data.email.toLowerCase().trim(), hash, data.firstName, data.lastName, data.role]
@@ -107,8 +104,8 @@ export async function createUser(data: {
   );
 }
 
-export function toggleUserActive(userId: string) {
-  run('UPDATE users SET is_active = CASE WHEN is_active=1 THEN 0 ELSE 1 END WHERE id = ?', [userId]);
+export async function toggleUserActive(userId: string) {
+  await run('UPDATE users SET is_active = CASE WHEN is_active=1 THEN 0 ELSE 1 END WHERE id = ?', [userId]);
   return queryOne<User>(
     'SELECT id, email, first_name, last_name, role, is_active FROM users WHERE id = ?',
     [userId]
@@ -116,7 +113,7 @@ export function toggleUserActive(userId: string) {
 }
 
 export async function ensureAdminExists() {
-  const exists = queryOne('SELECT id FROM users WHERE email = ?', ['admin@ultratravel.com']);
+  const exists = await queryOne('SELECT id FROM users WHERE email = ?', ['admin@ultratravel.com']);
   if (!exists) {
     await createUser({
       email:     'admin@ultratravel.com',
