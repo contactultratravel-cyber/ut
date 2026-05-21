@@ -72,6 +72,29 @@ export async function remove(req: AuthRequest, res: Response): Promise<void> {
   } catch { res.status(500).json({ message: 'Server error' }); }
 }
 
+export async function grantVisa(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    const client = await svc.grantVisa(req.params.id);
+    res.json(client);
+  } catch (err) { res.status(400).json({ message: (err as Error).message }); }
+}
+
+export async function uploadVisaPhoto(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    const { photo } = req.body as { photo: string };
+    if (!photo) { res.status(400).json({ message: 'Photo required' }); return; }
+    await svc.setVisaPhoto(req.params.id, photo);
+    res.json({ ok: true });
+  } catch { res.status(500).json({ message: 'Server error' }); }
+}
+
+export async function deleteVisaPhoto(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    await svc.clearVisaPhoto(req.params.id);
+    res.json({ ok: true });
+  } catch { res.status(500).json({ message: 'Server error' }); }
+}
+
 export async function uploadPassport(req: AuthRequest, res: Response): Promise<void> {
   try {
     const { photo } = req.body as { photo: string };

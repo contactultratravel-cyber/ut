@@ -1,16 +1,17 @@
 interface Props {
   children: React.ReactNode;
-  variant?: 'blue' | 'yellow' | 'green' | 'red' | 'gray' | 'purple';
+  variant?: 'blue' | 'yellow' | 'green' | 'red' | 'gray' | 'purple' | 'emerald';
   size?: 'sm' | 'md';
 }
 
 const variantClasses = {
-  blue:   'bg-blue-100 text-blue-800',
-  yellow: 'bg-yellow-100 text-yellow-800',
-  green:  'bg-green-100 text-green-800',
-  red:    'bg-red-100 text-red-800',
-  gray:   'bg-gray-100 text-gray-700',
-  purple: 'bg-purple-100 text-purple-800',
+  blue:    'bg-blue-100 text-blue-800',
+  yellow:  'bg-yellow-100 text-yellow-800',
+  green:   'bg-green-100 text-green-800',
+  red:     'bg-red-100 text-red-800',
+  gray:    'bg-gray-100 text-gray-700',
+  purple:  'bg-purple-100 text-purple-800',
+  emerald: 'bg-emerald-100 text-emerald-800',
 };
 
 export function Badge({ children, variant = 'gray', size = 'md' }: Props) {
@@ -30,9 +31,10 @@ export function StatusBadge({ status }: { status: string }) {
     NEW:        { label: 'Nouveau',     variant: 'blue'   },
     PROCESSING: { label: 'En cours',    variant: 'yellow' },
     COMPLETED:  { label: 'Terminé',     variant: 'green'  },
-    DELIVERED:  { label: 'Livré',       variant: 'purple' },
-    PENDING:    { label: 'En attente',  variant: 'yellow' },
-    CONFIRMED:  { label: 'Confirmé',    variant: 'green'  },
+    DELIVERED:    { label: 'Livré',         variant: 'purple'  },
+    VISA_GRANTED: { label: 'Visa accordé', variant: 'emerald' },
+    PENDING:      { label: 'En attente',   variant: 'yellow'  },
+    CONFIRMED:    { label: 'Confirmé',     variant: 'green'   },
   };
   const cfg = map[status] ?? { label: status, variant: 'gray' as Props['variant'] };
   return <Badge variant={cfg.variant}>{cfg.label}</Badge>;

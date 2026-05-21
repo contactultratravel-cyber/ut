@@ -27,6 +27,15 @@ export const clientsApi = {
 
   delete: (id: string) => api.delete(`/clients/${id}`),
 
+  grantVisa: (id: string) =>
+    api.post<Client>(`/clients/${id}/grant-visa`),
+
+  uploadVisaPhoto: (id: string, photo: string) =>
+    api.post(`/clients/${id}/visa-photo`, { photo }),
+
+  deleteVisaPhoto: (id: string) =>
+    api.delete(`/clients/${id}/visa-photo`),
+
   uploadPassport: (id: string, photo: string) =>
     api.post(`/clients/${id}/passport`, { photo }),
 

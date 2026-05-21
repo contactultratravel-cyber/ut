@@ -25,16 +25,17 @@ interface StatCardProps {
   title: string;
   value: string | number;
   icon: ReactNode;
-  color?: 'blue' | 'green' | 'yellow' | 'purple' | 'red';
+  color?: 'blue' | 'green' | 'yellow' | 'purple' | 'red' | 'emerald';
   subtitle?: string;
 }
 
 const colorMap = {
-  blue:   { bg: 'bg-blue-50',   icon: 'bg-blue-100 text-blue-700'   },
-  green:  { bg: 'bg-green-50',  icon: 'bg-green-100 text-green-700'  },
-  yellow: { bg: 'bg-yellow-50', icon: 'bg-yellow-100 text-yellow-700'},
-  purple: { bg: 'bg-purple-50', icon: 'bg-purple-100 text-purple-700'},
-  red:    { bg: 'bg-red-50',    icon: 'bg-red-100 text-red-700'    },
+  blue:    { bg: 'bg-blue-50',    icon: 'bg-blue-100 text-blue-700'     },
+  green:   { bg: 'bg-green-50',   icon: 'bg-green-100 text-green-700'   },
+  yellow:  { bg: 'bg-yellow-50',  icon: 'bg-yellow-100 text-yellow-700' },
+  purple:  { bg: 'bg-purple-50',  icon: 'bg-purple-100 text-purple-700' },
+  red:     { bg: 'bg-red-50',     icon: 'bg-red-100 text-red-700'       },
+  emerald: { bg: 'bg-emerald-50', icon: 'bg-emerald-100 text-emerald-700'},
 };
 
 export function StatCard({ title, value, icon, color = 'blue', subtitle }: StatCardProps) {

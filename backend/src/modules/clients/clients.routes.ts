@@ -29,6 +29,9 @@ router.patch('/:id/appointment', ctrl.updateAppointment);
 router.post('/:id/final-validation', ctrl.finalValidation);
 router.post('/:id/deliver',          ctrl.deliver);
 
+router.post('/:id/grant-visa',    ctrl.grantVisa);
+router.post('/:id/visa-photo',    ctrl.uploadVisaPhoto);
+router.delete('/:id/visa-photo',  ctrl.deleteVisaPhoto);
 router.post('/:id/passport',   ctrl.uploadPassport);
 router.delete('/:id/passport', ctrl.deletePassport);
 router.delete('/:id', requireRole('ADMIN', 'EMPLOYEE'), ctrl.remove);

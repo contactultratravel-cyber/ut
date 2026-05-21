@@ -1,5 +1,5 @@
 export type UserRole = 'ADMIN' | 'EMPLOYEE' | 'ACCOUNTANT';
-export type ClientStatus = 'NEW' | 'PROCESSING' | 'COMPLETED' | 'DELIVERED';
+export type ClientStatus = 'NEW' | 'PROCESSING' | 'COMPLETED' | 'DELIVERED' | 'VISA_GRANTED';
 export type VisaType = 'Tourist Visa' | 'Business Visa' | 'Study Visa' | 'Family Visit Visa';
 export type AppointmentStatus = 'PENDING' | 'CONFIRMED';
 export type RouteCode = 'FRA_ORN' | 'FRA_ALG' | 'FRA_COS' | 'FRA_ANBA';
@@ -31,6 +31,8 @@ export interface Client {
   appointment_status?: AppointmentStatus;
   whatsapp?: string;
   passport_photo?: string;
+  visa_photo?: string;
+  visa_granted_at?: string;
   created_by?: string;
   created_at: string;
   updated_at: string;
@@ -89,6 +91,7 @@ export interface DashboardStats {
   totalInvitations: number;
   totalTickets: number;
   totalHotels: number;
+  visaGranted: number;
 }
 
 export interface Statistics {

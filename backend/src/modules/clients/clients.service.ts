@@ -119,6 +119,22 @@ export async function deleteClient(id: string): Promise<void> {
   await run('DELETE FROM clients WHERE id = ?', [id]);
 }
 
+export async function grantVisa(id: string): Promise<Client> {
+  await run(
+    `UPDATE clients SET status='VISA_GRANTED', visa_granted_at=datetime('now'), updated_at=datetime('now') WHERE id=?`,
+    [id]
+  );
+  return (await getClient(id))!;
+}
+
+export async function setVisaPhoto(id: string, photo: string): Promise<void> {
+  await run("UPDATE clients SET visa_photo = ?, updated_at = datetime('now') WHERE id = ?", [photo, id]);
+}
+
+export async function clearVisaPhoto(id: string): Promise<void> {
+  await run("UPDATE clients SET visa_photo = NULL, updated_at = datetime('now') WHERE id = ?", [id]);
+}
+
 export async function setPassportPhoto(id: string, photo: string): Promise<void> {
   await run("UPDATE clients SET passport_photo = ?, updated_at = datetime('now') WHERE id = ?", [photo, id]);
 }
