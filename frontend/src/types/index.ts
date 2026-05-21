@@ -127,3 +127,10 @@ export const VISA_TYPES: VisaType[] = [
 ];
 
 export const ROUTE_CODES: RouteCode[] = ['FRA_ORN','FRA_ALG','FRA_COS','FRA_ANBA'];
+
+export const CAPAGO_CENTERS = [
+  { value: 'FRA_ALG',  label: 'FRA_Alger',      color: 'blue'   },
+  { value: 'FRA_ORN',  label: 'FRA_Oran',        color: 'green'  },
+  { value: 'FRA_COS',  label: 'FRA_Constantine', color: 'amber'  },
+  { value: 'FRA_ANBA', label: 'FRA_Annaba',      color: 'purple' },
+] as const;

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Client, COUNTRIES, VISA_TYPES, ROUTE_CODES } from '../../types';
+import { Client, COUNTRIES, VISA_TYPES, CAPAGO_CENTERS } from '../../types';
 import { Input } from '../../components/ui/Input';
 import { Select } from '../../components/ui/Select';
 import { Button } from '../../components/ui/Button';
@@ -26,6 +26,13 @@ interface Props {
   loading?: boolean;
 }
 
+const CENTER_COLORS: Record<string, { active: string; inactive: string }> = {
+  blue:   { active: 'bg-blue-600   text-white border-blue-600   shadow',   inactive: 'bg-blue-50   text-blue-700   border-blue-200   hover:border-blue-400   hover:bg-blue-100'   },
+  green:  { active: 'bg-green-600  text-white border-green-600  shadow',   inactive: 'bg-green-50  text-green-700  border-green-200  hover:border-green-400  hover:bg-green-100'  },
+  amber:  { active: 'bg-amber-500  text-white border-amber-500  shadow',   inactive: 'bg-amber-50  text-amber-700  border-amber-200  hover:border-amber-400  hover:bg-amber-100'  },
+  purple: { active: 'bg-purple-600 text-white border-purple-600 shadow',   inactive: 'bg-purple-50 text-purple-700 border-purple-200 hover:border-purple-400 hover:bg-purple-100' },
+};
+
 export default function ClientForm({ client, onSubmit, loading }: Props) {
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormData>({
     defaultValues: client ? {
@@ -45,6 +52,7 @@ export default function ClientForm({ client, onSubmit, loading }: Props) {
   });
 
   const country    = watch('country');
+  const routeCode  = watch('routeCode');
   const totalPrice = watch('totalPrice') ?? 0;
   const amountPaid = watch('amountPaid') ?? 0;
   const remaining  = Number(totalPrice) - Number(amountPaid);
@@ -94,12 +102,29 @@ export default function ClientForm({ client, onSubmit, loading }: Props) {
       </div>
 
       {country === 'France' && (
-        <Select
-          label="Code de route"
-          options={ROUTE_CODES.map((r) => ({ value: r, label: r }))}
-          placeholder="Sélectionner un code"
-          {...register('routeCode')}
-        />
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Centre de visa Capago
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            {CAPAGO_CENTERS.map(center => {
+              const isSelected = routeCode === center.value;
+              const cls = CENTER_COLORS[center.color];
+              return (
+                <button
+                  key={center.value}
+                  type="button"
+                  onClick={() => setValue('routeCode', isSelected ? '' : center.value)}
+                  className={`px-3 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all text-left flex items-center gap-2 ${isSelected ? cls.active : cls.inactive}`}
+                >
+                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isSelected ? 'bg-white' : `bg-current opacity-60`}`} />
+                  {center.label}
+                </button>
+              );
+            })}
+          </div>
+          <input type="hidden" {...register('routeCode')} />
+        </div>
       )}
 
       <div className="border-t border-gray-100 pt-4">

@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { clientsApi } from '../../api/clients.api';
-import { Client, ClientStatus } from '../../types';
+import { Client, ClientStatus, CAPAGO_CENTERS } from '../../types';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { StatusBadge } from '../../components/ui/Badge';
@@ -112,7 +112,25 @@ function ClientDetailsModal({ client, onClose }: { client: Client; onClose: () =
           <div className="grid grid-cols-2 gap-x-6 gap-y-2">
             <Row label="Pays"         value={client.country} />
             <Row label="Type de visa" value={client.visa_type} />
-            {client.route_code && <Row label="Code de route" value={client.route_code} />}
+            {client.route_code && (() => {
+              const center = CAPAGO_CENTERS.find(c => c.value === client.route_code);
+              const colorMap: Record<string, string> = {
+                blue:   'bg-blue-100 text-blue-800 border-blue-200',
+                green:  'bg-green-100 text-green-800 border-green-200',
+                amber:  'bg-amber-100 text-amber-800 border-amber-200',
+                purple: 'bg-purple-100 text-purple-800 border-purple-200',
+              };
+              return (
+                <div className="flex gap-2 text-sm col-span-2">
+                  <span className="text-gray-500 w-28 shrink-0">Centre Capago :</span>
+                  {center
+                    ? <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${colorMap[center.color]}`}>
+                        {center.label}
+                      </span>
+                    : <span className="text-gray-900 font-medium">{client.route_code}</span>}
+                </div>
+              );
+            })()}
           </div>
         </div>
 
