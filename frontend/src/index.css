@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+  body {
+    @apply bg-gray-50 text-gray-900 antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+@layer components {
+  .page-title {
+    @apply text-2xl font-bold text-gray-900 mb-1;
+  }
+  .page-subtitle {
+    @apply text-sm text-gray-500 mb-6;
+  }
+  .card {
+    @apply bg-white rounded-xl shadow-sm border border-gray-100 p-6;
+  }
+}
+
+/* ─── Dark mode ───────────────────────────────────────────── */
+html.dark body                         { background-color: #111827; color: #f9fafb; }
+html.dark .page-title                  { color: #f9fafb; }
+html.dark .page-subtitle               { color: #9ca3af; }
+
+html.dark .bg-white                    { background-color: #1f2937; }
+html.dark .bg-gray-50                  { background-color: #111827; }
+html.dark .bg-gray-100                 { background-color: #1f2937; }
+
+html.dark .text-gray-900               { color: #f9fafb; }
+html.dark .text-gray-800               { color: #f3f4f6; }
+html.dark .text-gray-700               { color: #e5e7eb; }
+html.dark .text-gray-600               { color: #d1d5db; }
+html.dark .text-gray-500               { color: #9ca3af; }
+html.dark .text-gray-400               { color: #6b7280; }
+
+html.dark .border-gray-100             { border-color: #374151; }
+html.dark .border-gray-200             { border-color: #374151; }
+html.dark .border-gray-300             { border-color: #4b5563; }
+html.dark .divide-gray-100 > * + *     { border-color: #374151; }
+
+html.dark .hover\:bg-gray-50:hover     { background-color: #1f2937; }
+html.dark .hover\:bg-gray-100:hover    { background-color: #374151; }
+
+html.dark input:not([type=checkbox]):not([type=radio]),
+html.dark select,
+html.dark textarea                     { background-color: #374151 !important; border-color: #4b5563 !important; color: #f9fafb !important; }
+html.dark input::placeholder,
+html.dark textarea::placeholder        { color: #6b7280; }
+
+html.dark .shadow-sm                   { box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.4); }
+html.dark .shadow                      { box-shadow: 0 1px 6px 0 rgb(0 0 0 / 0.5); }
+
+/* Header */
+html.dark header.bg-white              { background-color: #1f2937; border-color: #374151; }
+/* Modal backdrop */
+html.dark [data-modal-backdrop]        { background-color: rgba(0,0,0,0.7); }
